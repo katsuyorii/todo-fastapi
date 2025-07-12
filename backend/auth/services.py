@@ -1,6 +1,9 @@
 from users.repositories import UsersRepository
 
+from core.utils.password import hashing_password
+
 from .schemas import UserRegistrationSchema
+from .exceptions import EmailAlreadyRegistered
 
 
 class AuthService:
@@ -8,4 +11,14 @@ class AuthService:
         self.users_repository = users_repository
     
     async def registration(self, user_data: UserRegistrationSchema) -> dict[str, str]:
-        return {'message': 'OK'}
+        user = await self.users_repository.get_by_email(user_data.email)
+
+        if user is not None:
+            raise EmailAlreadyRegistered()
+
+        user_data_dict = user_data.model_dump()
+        user_data_dict['password'] = hashing_password(user_data.password)
+
+        await self.users_repository.create(user_data_dict)
+
+        return {'message': 'User registered successfully'}
