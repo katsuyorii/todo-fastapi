@@ -9,7 +9,7 @@ from core.utils.jwt import create_jwt_token
 
 from src.settings import jwt_settings
 
-from .schemas import UserRegistrationSchema
+from .schemas import UserRegistrationSchema, UserLoginSchema
 from .exceptions import EmailAlreadyRegistered
 
 
@@ -56,3 +56,6 @@ class AuthService:
         await self.users_repository.create(user_data_dict)
 
         return {'message': 'User registered successfully'}
+    
+    async def authentication(self, user_data: UserLoginSchema, response: Response):
+        pass
