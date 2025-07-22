@@ -1,14 +1,14 @@
 from fastapi import Response
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from src.settings import jwt_settings
 from users.repositories import UsersRepository
-from core.utils.password import hashing_password
+from core.utils.password import hashing_password, verify_password
 from core.utils.jwt import create_jwt_token
 
-from .schemas import UserRegistrationSchema
-from .exceptions import EmailAlreadyRegistered
+from .schemas import AccessTokenResponseSchema, UserRegistrationSchema, UserLoginSchema
+from .exceptions import EmailAlreadyRegistered, EmailOrPasswordIncorrect
 
 
 class JWTTokensService:
@@ -26,11 +26,11 @@ class JWTTokensService:
 
         return refresh_token
     
-    def set_token_to_cookies(self, key: str, value: str, exp: float, httponly: bool, response: Response) -> None:
+    def set_token_to_cookies(self, key: str, value: str, expire_delta: timedelta, httponly: bool, response: Response) -> None:
         response.set_cookie(
             key=key,
             value=value,
-            expires=datetime.fromtimestamp(exp),
+            expires=datetime.now(timezone.utc) + expire_delta,
             secure=True,
             httponly=httponly,
             samesite='strict',
@@ -55,3 +55,23 @@ class AuthService:
         await self.users_repository.create(user_data_dict)
 
         return {'message': 'User registered successfully'}
+
+    async def authentication(self, user_data: UserLoginSchema, response: Response) -> AccessTokenResponseSchema:
+        user = await self.users_repository.get_by_email(user_data.email)
+
+        if user is None or not verify_password(user_data.password, user.password):
+            raise EmailOrPasswordIncorrect()
+        
+        # Необходимо сделаь проверку на активированную и не заблокированную учетную запись
+        #if not user.is_active:
+        #    pass
+
+        paylaod = {'sub': str(user.id)} # Добавить поле - роль
+
+        access_token = self.jwt_tokens_service.create_access_token(paylaod)
+        refresh_token = self.jwt_tokens_service.create_refresh_token(paylaod)
+
+        self.jwt_tokens_service.set_token_to_cookies('access_token', access_token, timedelta(minutes=jwt_settings.JWT_ACCESS_TOKEN_MINUTES_EXPIRES), False, response)
+        self.jwt_tokens_service.set_token_to_cookies('refresh_token', refresh_token, timedelta(days=jwt_settings.JWT_REFRESH_TOKEN_DAYS_EXPIRES), True, response)
+
+        return AccessTokenResponseSchema(access_token=access_token)
