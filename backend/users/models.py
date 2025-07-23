@@ -1,9 +1,16 @@
 from sqlalchemy import String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
+from enum import Enum
+
 from datetime import datetime, date, timezone
 
 from core.models.base import BaseModel
+
+
+class UserRole(str, Enum):
+    USER = 'user'
+    ADMIN = 'admin'
 
 
 class UserModel(BaseModel):
@@ -13,6 +20,7 @@ class UserModel(BaseModel):
     password: Mapped[str]
 
     username: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(5), default=UserRole.USER)
     date_of_birth: Mapped[date] = mapped_column(nullable=True)
     # avatar_url
 

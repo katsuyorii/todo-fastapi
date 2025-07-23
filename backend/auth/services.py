@@ -66,7 +66,7 @@ class AuthService:
         #if not user.is_active:
         #    pass
 
-        paylaod = {'sub': str(user.id)} # Добавить поле - роль
+        paylaod = {'sub': str(user.id), 'role': user.role}
 
         access_token = self.jwt_tokens_service.create_access_token(paylaod)
         refresh_token = self.jwt_tokens_service.create_refresh_token(paylaod)

@@ -1,8 +1,8 @@
-"""Create user model
+"""empty message
 
-Revision ID: c6afaf569c7b
+Revision ID: 4c8641c9ecd1
 Revises: 
-Create Date: 2025-07-20 16:56:13.470168
+Create Date: 2025-07-23 18:33:47.709561
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c6afaf569c7b'
+revision: str = '4c8641c9ecd1'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,6 +25,7 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('password', sa.String(), nullable=False),
     sa.Column('username', sa.String(length=255), nullable=False),
+    sa.Column('role', sa.String(length=5), nullable=False),
     sa.Column('date_of_birth', sa.Date(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_mailing', sa.Boolean(), nullable=False),
