@@ -1,4 +1,4 @@
-from fastapi import Response
+from fastapi import Request, Response
 
 from datetime import datetime, timezone, timedelta
 
@@ -75,3 +75,9 @@ class AuthService:
         self.jwt_tokens_service.set_token_to_cookies('refresh_token', refresh_token, timedelta(days=jwt_settings.JWT_REFRESH_TOKEN_DAYS_EXPIRES), True, response)
 
         return AccessTokenResponseSchema(access_token=access_token)
+
+    async def logout(self, request: Request, response: Response) -> dict[str, str]:
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+
+        return {'message': 'User successfully logged out'}
