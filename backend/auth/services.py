@@ -6,9 +6,15 @@ from src.settings import jwt_settings
 from users.repositories import UsersRepository
 from core.utils.password import hashing_password, verify_password
 from core.utils.jwt import create_jwt_token
+from core.repositories.redis_base import RedisBaseRepository
 
 from .schemas import AccessTokenResponseSchema, UserRegistrationSchema, UserLoginSchema
 from .exceptions import EmailAlreadyRegistered, EmailOrPasswordIncorrect
+
+
+class BlacklistTokensService:
+    def __init__(self, redis_repository: RedisBaseRepository):
+        self.redis_repository = redis_repository
 
 
 class JWTTokensService:
@@ -38,9 +44,10 @@ class JWTTokensService:
 
 
 class AuthService:
-    def __init__(self, users_repository: UsersRepository, jwt_tokens_service: JWTTokensService):
+    def __init__(self, users_repository: UsersRepository, jwt_tokens_service: JWTTokensService, blacklist_tokens_service: BlacklistTokensService):
         self.users_repository = users_repository
         self.jwt_tokens_service = jwt_tokens_service
+        self.blacklist_tokens_service = blacklist_tokens_service
     
     async def registration(self, user_data: UserRegistrationSchema) -> dict[str, str]:
         user = await self.users_repository.get_by_email(user_data.email)
