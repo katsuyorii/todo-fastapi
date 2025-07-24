@@ -26,13 +26,13 @@ class JWTTokensService:
 
         return refresh_token
     
-    def set_token_to_cookies(self, key: str, value: str, expire_delta: timedelta, httponly: bool, response: Response) -> None:
+    def set_refresh_token_to_cookies(self, value: str, response: Response) -> None:
         response.set_cookie(
-            key=key,
+            key='refresh_token',
             value=value,
-            expires=datetime.now(timezone.utc) + expire_delta,
+            expires=datetime.now(timezone.utc) + timedelta(days=self.refresh_token_days_expires),
             secure=True,
-            httponly=httponly,
+            httponly=True,
             samesite='strict',
         )
 
@@ -71,13 +71,11 @@ class AuthService:
         access_token = self.jwt_tokens_service.create_access_token(paylaod)
         refresh_token = self.jwt_tokens_service.create_refresh_token(paylaod)
 
-        self.jwt_tokens_service.set_token_to_cookies('access_token', access_token, timedelta(minutes=jwt_settings.JWT_ACCESS_TOKEN_MINUTES_EXPIRES), False, response)
-        self.jwt_tokens_service.set_token_to_cookies('refresh_token', refresh_token, timedelta(days=jwt_settings.JWT_REFRESH_TOKEN_DAYS_EXPIRES), True, response)
+        self.jwt_tokens_service.set_refresh_token_to_cookies(refresh_token, response)
 
         return AccessTokenResponseSchema(access_token=access_token)
 
     async def logout(self, request: Request, response: Response) -> dict[str, str]:
-        response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
 
         return {'message': 'User successfully logged out'}
