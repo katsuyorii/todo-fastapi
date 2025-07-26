@@ -9,3 +9,8 @@ class EmailAlreadyRegistered(HTTPException):
 class EmailOrPasswordIncorrect(HTTPException):
     def __init__(self, status_code = status.HTTP_401_UNAUTHORIZED, detail = 'Email or password is incorrect', headers = {"WWW-Authenticate": "Bearer"}):
         super().__init__(status_code, detail, headers)
+
+
+class TokenMissing(HTTPException):
+    def __init__(self, status_code = status.HTTP_401_UNAUTHORIZED, detail = 'Token is missing', headers = {"WWW-Authenticate": "Bearer"}):
+        super().__init__(status_code, detail, headers)
