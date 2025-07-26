@@ -16,7 +16,7 @@ from .exceptions import EmailAlreadyRegistered, EmailOrPasswordIncorrect, TokenM
 class BlacklistTokensService:
     def __init__(self, redis_repository: RedisBaseRepository):
         self.redis_repository = redis_repository
-        self.key_prefix = 'blacklist'
+        self.__key_prefix = 'blacklist'
     
     async def set_token_to_blacklist(self, payload: dict) -> None:
         exp = payload.get('exp')
@@ -25,26 +25,26 @@ class BlacklistTokensService:
         current_time = int(time())
         ttl = exp - current_time
 
-        await self.redis_repository.setex(f'{self.key_prefix}:{jti}', 1, ttl)
+        await self.redis_repository.setex(f'{self.__key_prefix}:{jti}', 1, ttl)
     
     async def is_token_blacklisted(self, payload: dict) -> bool:
         jti = payload.get('jti')
 
-        return await self.redis_repository.exists(f'{self.key_prefix}:{jti}')
+        return await self.redis_repository.exists(f'{self.__key_prefix}:{jti}')
 
 
 class JWTTokensService:
     def __init__(self, access_token_minutes_expires: int = jwt_settings.JWT_ACCESS_TOKEN_MINUTES_EXPIRES, refresh_token_days_expires: int = jwt_settings.JWT_REFRESH_TOKEN_DAYS_EXPIRES):
-        self.access_token_minutes_expires = access_token_minutes_expires
-        self.refresh_token_days_expires = refresh_token_days_expires
+        self.__access_token_minutes_expires = access_token_minutes_expires
+        self.__refresh_token_days_expires = refresh_token_days_expires
     
     def create_access_token(self, payload: dict) -> str:
-        access_token = create_jwt_token(payload, timedelta(minutes=self.access_token_minutes_expires))
+        access_token = create_jwt_token(payload, timedelta(minutes=self.__access_token_minutes_expires))
 
         return access_token
     
     def create_refresh_token(self, payload: dict) -> str:
-        refresh_token = create_jwt_token(payload, timedelta(days=self.refresh_token_days_expires))
+        refresh_token = create_jwt_token(payload, timedelta(days=self.__refresh_token_days_expires))
 
         return refresh_token
     
@@ -52,7 +52,7 @@ class JWTTokensService:
         response.set_cookie(
             key='refresh_token',
             value=value,
-            expires=datetime.now(timezone.utc) + timedelta(days=self.refresh_token_days_expires),
+            expires=datetime.now(timezone.utc) + timedelta(days=self.__refresh_token_days_expires),
             secure=True,
             httponly=True,
             samesite='strict',
@@ -105,6 +105,9 @@ class AuthService:
             raise TokenMissing()
         
         payload = verify_jwt_token(refresh_token)
+
+        if await self.blacklist_tokens_service.is_token_blacklisted(payload):
+            raise TokenBlacklisted()
 
         await self.blacklist_tokens_service.set_token_to_blacklist(payload)
 
