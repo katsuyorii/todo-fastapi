@@ -16,6 +16,7 @@ from .exceptions import EmailAlreadyRegistered, EmailOrPasswordIncorrect, TokenM
 class BlacklistTokensService:
     def __init__(self, redis_repository: RedisBaseRepository):
         self.redis_repository = redis_repository
+        self.key_prefix = 'blacklist'
     
     async def set_token_to_blacklist(self, payload: dict) -> None:
         exp = payload.get('exp')
@@ -24,7 +25,12 @@ class BlacklistTokensService:
         current_time = int(time())
         ttl = exp - current_time
 
-        await self.redis_repository.setex(f'blacklist:{jti}', 1, ttl)
+        await self.redis_repository.setex(f'{self.key_prefix}:{jti}', 1, ttl)
+    
+    async def is_token_blacklisted(self, payload: dict) -> bool:
+        jti = payload.get('jti')
+
+        return await self.redis_repository.exists(f'{self.key_prefix}:{jti}')
 
 
 class JWTTokensService:
