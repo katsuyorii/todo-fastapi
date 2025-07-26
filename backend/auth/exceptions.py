@@ -14,3 +14,8 @@ class EmailOrPasswordIncorrect(HTTPException):
 class TokenMissing(HTTPException):
     def __init__(self, status_code = status.HTTP_401_UNAUTHORIZED, detail = 'Token is missing', headers = {"WWW-Authenticate": "Bearer"}):
         super().__init__(status_code, detail, headers)
+
+
+class TokenBlacklisted(HTTPException):
+    def __init__(self, status_code = status.HTTP_401_UNAUTHORIZED, detail = 'Token is blacklisted', headers = {"WWW-Authenticate": "Bearer"}):
+        super().__init__(status_code, detail, headers)

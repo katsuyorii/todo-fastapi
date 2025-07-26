@@ -10,7 +10,7 @@ from core.utils.jwt import create_jwt_token, verify_jwt_token
 from core.repositories.redis_base import RedisBaseRepository
 
 from .schemas import AccessTokenResponseSchema, UserRegistrationSchema, UserLoginSchema
-from .exceptions import EmailAlreadyRegistered, EmailOrPasswordIncorrect, TokenMissing
+from .exceptions import EmailAlreadyRegistered, EmailOrPasswordIncorrect, TokenMissing, TokenBlacklisted
 
 
 class BlacklistTokensService:
@@ -111,3 +111,27 @@ class AuthService:
         response.delete_cookie('refresh_token')
 
         return {'message': 'User successfully logged out'}
+    
+    async def refresh(self, request: Request, response: Response):
+        refresh_token = request.cookies.get('refresh_token')
+
+        if refresh_token is None:
+            raise TokenMissing()
+        
+        payload = verify_jwt_token(refresh_token)
+
+        if await self.blacklist_tokens_service.is_token_blacklisted(payload):
+            raise TokenBlacklisted()
+
+        await self.blacklist_tokens_service.set_token_to_blacklist(payload)
+
+        user = await self.users_repository.get(int(payload.get('sub')))
+
+        new_paylaod = {'sub': str(user.id), 'role': user.role}
+
+        access_token = self.jwt_tokens_service.create_access_token(new_paylaod)
+        refresh_token = self.jwt_tokens_service.create_refresh_token(new_paylaod)
+
+        self.jwt_tokens_service.set_refresh_token_to_cookies(refresh_token, response)
+
+        return AccessTokenResponseSchema(access_token=access_token)
