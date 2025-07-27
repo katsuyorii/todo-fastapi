@@ -115,7 +115,7 @@ class AuthService:
 
         return {'message': 'User successfully logged out'}
     
-    async def refresh(self, request: Request, response: Response):
+    async def refresh(self, request: Request, response: Response) -> AccessTokenResponseSchema:
         refresh_token = request.cookies.get('refresh_token')
 
         if refresh_token is None:
