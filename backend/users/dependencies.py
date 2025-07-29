@@ -19,6 +19,8 @@ def get_users_repository(session: AsyncSession = Depends(get_session)) -> UsersR
 async def get_current_user(token: str = Depends(oauth2_scheme), users_repository: UsersRepository = Depends(get_users_repository)) -> UserModel:
     payload = verify_jwt_token(token)
 
+    # Придумать проверки на отсутствие юзера, токена в блек листе и т.д.
+
     current_user = await users_repository.get(int(payload.get('sub')))
 
     return current_user

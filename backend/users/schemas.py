@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from datetime import datetime, date
 
@@ -13,3 +13,9 @@ class UserResponseSchema(BaseModel):
     is_mailing: bool
     created_at: datetime
     updated_at: datetime
+
+
+class UserUpdateSchema(BaseModel):
+    username: str | None = Field(default=None)
+    date_of_birth: date | None = Field(default=None)
+    is_mailing: bool | None = Field(default=None)
